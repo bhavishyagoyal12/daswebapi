@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31410.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "das_api", "das_api.csproj", "{5618E42E-8A79-43E0-9319-5D3C3E915A16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5618E42E-8A79-43E0-9319-5D3C3E915A16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5618E42E-8A79-43E0-9319-5D3C3E915A16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5618E42E-8A79-43E0-9319-5D3C3E915A16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5618E42E-8A79-43E0-9319-5D3C3E915A16}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {04DA4D72-B169-4876-8317-AB9651E21701}
+	EndGlobalSection
+EndGlobal

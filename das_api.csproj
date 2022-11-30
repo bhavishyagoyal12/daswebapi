@@ -8,4 +8,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="daslibrary">
+      <HintPath>daslibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="Imass.EventPool">
+      <HintPath>Imass.EventPool.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

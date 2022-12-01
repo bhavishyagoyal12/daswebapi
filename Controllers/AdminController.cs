@@ -1,6 +1,7 @@
 ﻿using das_api.BusinessLogic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,53 +20,46 @@ namespace das_api.Controllers
         public string side { get; set; }
         public Boolean isMarket { get; set; }
     }
-
+    public class Response
+    {
+        public string data { get; set; }
+    }
     [ApiController]
     [Route("[controller]")]
     public class AdminController : ControllerBase
     {
-        private readonly ILogger<AdminController> _logger;
+        private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public DashConnect dashConnect = null;
-        public AdminController(ILogger<AdminController> logger)
+        protected readonly ILogger<AdminController> _log;
+        public AdminController(ILogger<AdminController> log)
         {
-            _logger = logger;
+            _log = log;
         }
 
         [HttpGet]
         [Route("Login")]
-        public String Login()
+        [Produces("application/json")]
+        public IActionResult Login()
         {
-            if (dashConnect == null)
-            {
-                dashConnect = new DashConnect(); 
-            }
-            else
-            {
-                return "Already Connected";
-            }
-            String msg = dashConnect.login();
-            return msg;
+            _log.LogInformation("sss");
+            ObjectFactory.start();
+            return new OkObjectResult(new Response { data = "Logged In" });
         }
 
         [HttpPost]
         [Route("PlaceOrder")]
-        public String PlaceOrder([FromBody] order o)
+        [Produces("application/json")]
+        public IActionResult PlaceOrder([FromBody] order o)
         {
-            if (dashConnect == null)
+            _logger.Info("data request "+o.ToString());
+            if (ObjectFactory.dashConnect == null)
             {
-                dashConnect = new DashConnect();
+                _logger.Info("User Currently LogOut");
+                return new OkObjectResult(new Response { data = "User LogOut" });
             }
-            else
-            {
-                return "Already Connected";
-            }
-            String msg = dashConnect.login();
-            if (dashConnect == null)
-            {
-                return "User LogOut";
-            }
-            msg = dashConnect.placeTrade(o);
-            return msg;
+            string msg = ObjectFactory.dashConnect.placeTrade(o);
+            _logger.Info("PlaceOrder Response " + msg);
+            return new OkObjectResult(new Response { data = msg });
         }
         
     }

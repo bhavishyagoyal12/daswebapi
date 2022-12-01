@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using das_api.Controllers;
 using daslibrary;
+using Microsoft.Extensions.Logging;
+
 namespace das_api.BusinessLogic
 {
     public class DashConnect
@@ -13,11 +15,20 @@ namespace das_api.BusinessLogic
         private SocketQuoteServer socketQuoteServer = null;
         private int traderId;
         private int waitseconds = 5;
+        private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        public DashConnect()
+        {
+           
+        }
+
+        
+
         public String login()
         {
             string msg = "";
             if (socketOrderServer != null || socketQuoteServer != null)
             {
+                _logger.Info("socketOrderServer is null or socketQuoteServer is null ");
                 return "Already Connected";
             }
             string user = "IM0395";
@@ -50,13 +61,14 @@ namespace das_api.BusinessLogic
                     socketQuoteServer.PkgLogin(user, passwd, quoteserver);
 
                     traderId = itemtrader.mtrid;
-
+                    _logger.Info("Logged Successfully");
                     msg = "Logged successfully.";
 
                     if (socketOrderServer.sitemAcct_Access.sMapAccid.Count > 0)
                     {
                         foreach (int acoutid in socketOrderServer.sitemAcct_Access.GetAccountIDs(traderId))
                         {
+                            _logger.Info("Account IDS "+ acoutid.ToString());
                             msg += "\n Account Ids- "+(acoutid.ToString());
 
                             // foreach (itemPosition position in socketOrderServer.sitemPosition.Finditems(acoutid))
@@ -72,6 +84,7 @@ namespace das_api.BusinessLogic
 
                     foreach (itemAccount ia in socketOrderServer.sitemAccount.sMapAccID.Values)
                     {
+                        _logger.Info("\n\r maccid and name- " + ia.mitemifo.maccid + ":" + ia.mitemifo.mname);
                         Console.WriteLine("\n\r" + ia.mitemifo.maccid + ":" + ia.mitemifo.mname);
                     }
 
@@ -104,6 +117,7 @@ namespace das_api.BusinessLogic
 
             if (timeout > waitseconds * 1000)
             {
+                _logger.Info("Problem in User ID or password.");
                 msg = "Problem in User ID or password.";
             }
 
@@ -153,9 +167,10 @@ namespace das_api.BusinessLogic
                     low = quote.l1_todaylow.ToString();
                     last = quote.l1_lastPrice.ToString();
                     exc = quote.PrimExch;
-                    break;
+                     break;
                 }
             }
+            _logger.Info("Level1 subscribe Done bid: " + bid + " ask: " + ask + " high: " + high + " low: " + low + " last: " + last);
 
             socketQuoteServer.WLSTRemoveWatch(quotesymbol);
             itemOrder newOrder = new itemOrder();
@@ -231,11 +246,11 @@ namespace das_api.BusinessLogic
 
 
                             if ((myorder.mstatus & (1 << 1)) != 0)
-                                msg += "Order Executed";
+                                msg += " Order Executed";
                             else if ((myorder.mstatus & (1 << 2)) != 0)
-                                msg += "Order Canceled";
+                                msg += " Order Canceled";
                             else if ((myorder.mstatus & (1 << 4)) != 0)
-                                msg += "Order Accepted";
+                                msg += " Order Accepted";
 
                             if (msg.Trim().Length == 0) continue;
 
@@ -247,10 +262,12 @@ namespace das_api.BusinessLogic
                     {
                         if (socketOrderServer.errormsg.Length > 0)
                         {
+                            _logger.Info("error msg " + socketOrderServer.errormsg);
                             msg = socketOrderServer.errormsg;
                         }
                         else
                         {
+                            _logger.Info("error msg: TimeOut ");
                             msg = "Time Out !";
                         }
                     }
@@ -258,6 +275,7 @@ namespace das_api.BusinessLogic
                 }
                 else
                 {
+                    _logger.Info("error msg:  "+errMsg);
                     msg = "Error:" + errMsg;
 
 
@@ -268,7 +286,7 @@ namespace das_api.BusinessLogic
             }
             catch (Exception ex)
             {
-
+                _logger.Info("error msg: order send failed "+ex.Message);
                 msg = "Send Order fail.";
 
             }

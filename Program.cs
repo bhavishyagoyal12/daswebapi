@@ -14,6 +14,7 @@ namespace das_api
     {
         public static void Main(string[] args)
         {
+            ObjectFactory.start();
             CreateHostBuilder(args).Build().Run();
         }
 

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using das_api.Controllers;
 using daslibrary;
@@ -8,6 +10,10 @@ using Microsoft.Extensions.Logging;
 
 namespace das_api.BusinessLogic
 {
+    public class JsonData
+    {
+        public List<string> data { get; set; }
+    }
     public class DashConnect
     {
 
@@ -15,13 +21,59 @@ namespace das_api.BusinessLogic
         private SocketQuoteServer socketQuoteServer = null;
         private int traderId;
         private int waitseconds = 5;
+        private string user = "IM0395";
+        private string passwd = "WyethPaper321";
+        private string orderserver = "4.2.100.36";
+        private string quoteserver = "4.2.100.86";
+        private int orderport = 7500;
+        private int quoteport = 9510;
+
         private static readonly log4net.ILog _logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        
         public DashConnect()
         {
-           
+          
         }
 
-        
+        private void readJsonAndSubscribeL1()
+        {
+            try
+            {
+                using (StreamReader r = new StreamReader("data.json"))
+                {
+                    string json = r.ReadToEnd();
+                    JsonData source = JsonSerializer.Deserialize<JsonData>(json);
+                    for(int i=0; i<source.data.Count; i++)
+                    {
+                        try
+                        {
+                            int timeout = 0;
+                            string quotesymbol = source.data[i];
+                            socketQuoteServer.WLSTAddWatch(quotesymbol);
+                            while (timeout <= 10000)
+                            {
+                                timeout += 100;
+                                System.Threading.Thread.Sleep(100);
+                                if (IssueIfo.mIssueSet.ContainsKey(quotesymbol))
+                                {
+                                    IssueIfo quote = IssueIfo.mIssueSet[quotesymbol];
+                                    Console.WriteLine("price done");
+                                    break;
+                                }
+                            }
+                            socketQuoteServer.WLSTRemoveWatch(quotesymbol);
+                        }catch(Exception e)
+                        {
+                            _logger.Info("first error msg: subscribing level 1" + e.Message);
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                _logger.Info("error msg: subscribing level 1" + e.Message);
+            }
+        }
 
         public String login()
         {
@@ -31,12 +83,7 @@ namespace das_api.BusinessLogic
                 _logger.Info("socketOrderServer is null or socketQuoteServer is null ");
                 return "Already Connected";
             }
-            string user = "IM0395";
-            string passwd = "WyethPaper321";
-            string orderserver = "4.2.100.36";
-            string quoteserver = "4.2.100.86";
-            int orderport = 7500;
-            int quoteport = 9510;
+            
             //connect  the order server
             socketOrderServer = new SocketOrderServer();
             socketOrderServer.Connect(orderserver, (int)orderport);
@@ -121,6 +168,7 @@ namespace das_api.BusinessLogic
                 msg = "Problem in User ID or password.";
             }
 
+            readJsonAndSubscribeL1();
             return msg;
 
         }
@@ -149,30 +197,43 @@ namespace das_api.BusinessLogic
 
             string quotesymbol = o.symbol.Trim().ToUpper();
 
-            socketQuoteServer.WLSTAddWatch(quotesymbol);
-
-
-            while (timeout <= 10000)
+            for(int i=0; i<3; i++)
             {
-                timeout += 100;
-                System.Threading.Thread.Sleep(100);
-
-                if (IssueIfo.mIssueSet.ContainsKey(quotesymbol))
+                Boolean priceDone = false;
+                socketQuoteServer.WLSTAddWatch(quotesymbol);
+                while (timeout <= 10000)
                 {
-                    IssueIfo quote = IssueIfo.mIssueSet[quotesymbol];
-
-                    bid = quote.l1_BidPrice.ToString();
-                    ask = quote.l1_AskPrice.ToString();
-                    high = quote.l1_todayhigh.ToString();
-                    low = quote.l1_todaylow.ToString();
-                    last = quote.l1_lastPrice.ToString();
-                    exc = quote.PrimExch;
-                     break;
+                    timeout += 100;
+                    System.Threading.Thread.Sleep(100);
+                    if (IssueIfo.mIssueSet.ContainsKey(quotesymbol))
+                    {
+                        IssueIfo quote = IssueIfo.mIssueSet[quotesymbol];
+                        bid = quote.l1_BidPrice.ToString();
+                        ask = quote.l1_AskPrice.ToString();
+                        high = quote.l1_todayhigh.ToString();
+                        low = quote.l1_todaylow.ToString();
+                        last = quote.l1_lastPrice.ToString();
+                        exc = quote.PrimExch;
+                        priceDone = true;
+                        Console.WriteLine("price done");
+                        break;
+                    }
                 }
+                socketQuoteServer.WLSTRemoveWatch(quotesymbol);
+                if (priceDone)
+                {                    
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("price not done");
+                }
+                System.Threading.Thread.Sleep(1000);
             }
+                        
+            
             _logger.Info("Level1 subscribe Done bid: " + bid + " ask: " + ask + " high: " + high + " low: " + low + " last: " + last);
 
-            socketQuoteServer.WLSTRemoveWatch(quotesymbol);
             itemOrder newOrder = new itemOrder();
 
             newOrder.mtrid = traderId;
